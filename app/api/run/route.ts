@@ -286,7 +286,11 @@ async function runClaude(
 }
 
 export async function POST(req: NextRequest) {
-  const { url } = (await req.json()) as { url?: string };
+  const { url, language } = (await req.json()) as {
+    url?: string;
+    language?: "ko" | "en";
+  };
+  const lang: "ko" | "en" = language === "en" ? "en" : "ko";
 
   const encoder = new TextEncoder();
 
@@ -350,13 +354,16 @@ export async function POST(req: NextRequest) {
 
         // Stage 3 — model
         stage("model", "Claude 추론", "active", "Sonnet 4.6 호출 중", 1);
-        const prompt = buildTextPrompt({
-          url: content.url,
-          source_type: content.source_type,
-          site_name: content.site_name,
-          title: content.title,
-          text: content.text,
-        });
+        const prompt = buildTextPrompt(
+          {
+            url: content.url,
+            source_type: content.source_type,
+            site_name: content.site_name,
+            title: content.title,
+            text: content.text,
+          },
+          lang,
+        );
         const startedAt = Date.now();
         let accumulated = "";
         let lastTickAt = 0;

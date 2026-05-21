@@ -120,8 +120,11 @@ async function exportCard(node: HTMLElement): Promise<string> {
   });
 }
 
+type Language = "ko" | "en";
+
 export default function Home() {
   const [url, setUrl] = useState("");
+  const [language, setLanguage] = useState<Language>("ko");
   const [running, setRunning] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -184,7 +187,7 @@ export default function Home() {
     try {
       const res = await fetch("/api/run", {
         method: "POST",
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, language }),
         headers: { "Content-Type": "application/json" },
       });
       if (!res.body) throw new Error("스트림 응답이 없습니다");
@@ -309,33 +312,43 @@ export default function Home() {
       </header>
 
       {/* Input row */}
-      <form onSubmit={handleGenerate} className="flex flex-col gap-3 sm:flex-row">
-        <div className="relative flex-1">
-          <input
-            id="url"
-            type="url"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder=" "
-            className="peer w-full rounded-2xl border border-[var(--md-outline)] bg-[var(--md-surface)] px-5 pb-3 pt-6 text-[15px] outline-none transition focus:border-[var(--md-primary)] focus:ring-1 focus:ring-[var(--md-primary)] disabled:opacity-50"
+      <form onSubmit={handleGenerate} className="space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative flex-1">
+            <input
+              id="url"
+              type="url"
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder=" "
+              className="peer w-full rounded-2xl border border-[var(--md-outline)] bg-[var(--md-surface)] px-5 pb-3 pt-6 pr-44 text-[15px] outline-none transition focus:border-[var(--md-primary)] focus:ring-1 focus:ring-[var(--md-primary)] disabled:opacity-50"
+              disabled={running}
+              required
+            />
+            <label
+              htmlFor="url"
+              className="pointer-events-none absolute left-5 top-2 text-[12px] font-medium text-[var(--md-on-surface-variant)] transition peer-placeholder-shown:top-4 peer-placeholder-shown:text-[15px] peer-focus:top-2 peer-focus:text-[12px] peer-focus:text-[var(--md-primary)]"
+            >
+              기사 또는 YouTube URL
+            </label>
+            {/* Language toggle inside the input field, right side */}
+            <div className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2">
+              <LanguageToggle
+                value={language}
+                onChange={setLanguage}
+                disabled={running}
+              />
+            </div>
+          </div>
+          <button
+            type="submit"
             disabled={running}
-            required
-          />
-          <label
-            htmlFor="url"
-            className="pointer-events-none absolute left-5 top-2 text-[12px] font-medium text-[var(--md-on-surface-variant)] transition peer-placeholder-shown:top-4 peer-placeholder-shown:text-[15px] peer-focus:top-2 peer-focus:text-[12px] peer-focus:text-[var(--md-primary)]"
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--md-primary)] px-7 py-4 text-[14px] font-medium text-[var(--md-on-primary)] shadow-[var(--md-elev-1)] transition hover:bg-[var(--md-primary-hover)] hover:shadow-[var(--md-elev-2)] disabled:opacity-50 disabled:shadow-none"
           >
-            기사 또는 YouTube URL
-          </label>
+            {running && <Spinner />}
+            {buttonLabel}
+          </button>
         </div>
-        <button
-          type="submit"
-          disabled={running}
-          className="inline-flex items-center justify-center gap-2 rounded-full bg-[var(--md-primary)] px-7 py-4 text-[14px] font-medium text-[var(--md-on-primary)] shadow-[var(--md-elev-1)] transition hover:bg-[var(--md-primary-hover)] hover:shadow-[var(--md-elev-2)] disabled:opacity-50 disabled:shadow-none"
-        >
-          {running && <Spinner />}
-          {buttonLabel}
-        </button>
       </form>
 
       {/* Progress stepper */}
@@ -490,6 +503,44 @@ export default function Home() {
         <div>1080 × 1350 · PNG</div>
       </footer>
     </main>
+  );
+}
+
+function LanguageToggle({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: Language;
+  onChange: (v: Language) => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div
+      className="pointer-events-auto inline-flex items-center gap-0.5 rounded-full border border-[var(--md-outline-variant)] bg-[var(--md-surface)] p-0.5"
+      role="group"
+      aria-label="출력 언어"
+    >
+      {(["ko", "en"] as const).map((opt) => {
+        const active = value === opt;
+        return (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => onChange(opt)}
+            disabled={disabled}
+            aria-pressed={active}
+            className={`rounded-full px-3 py-1 text-[12px] font-medium transition disabled:opacity-50 ${
+              active
+                ? "bg-[var(--md-primary)] text-white shadow-[var(--md-elev-1)]"
+                : "text-[var(--md-on-surface-variant)] hover:bg-[rgba(0,0,0,0.04)]"
+            }`}
+          >
+            {opt === "ko" ? "한국어" : "English"}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
